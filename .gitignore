@@ -1,0 +1,4 @@
+build/
+RPMS/
+rpmbuilddir/
+CMakeLists.txt.user

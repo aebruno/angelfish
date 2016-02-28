@@ -1,0 +1,4 @@
+AngelFish includes the source code for libgato, a A GATT/ATT library for use
+with Bluez developed by Javier S. Pedro and released under the GPLv2.
+
+See: https://git.javispedro.com/cgit/libgato.git/
