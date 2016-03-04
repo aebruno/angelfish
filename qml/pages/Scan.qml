@@ -2,103 +2,107 @@ import QtQuick 2.0
 import Sailfish.Silica 1.0
 
 Dialog {
-    id: page
-    canAccept: false
+    id: root
+
+    property int selectedDevice: -1
+    property bool deviceSelected: false
+
+    canAccept: deviceSelected
+
+    onOpened: {
+        timer.start()
+        angel.deviceSearch()
+    }
 
     onRejected: {
         console.log("Stop scan")
+        timer.stop()
         angel.stopSearch()
     }
 
+    onAccepted: {
+        timer.stop()
+        progressPanel.hide()
+        angel.stopSearch()
+        console.log("Accpeted. Connecting to device at " + root.selectedDevice)
+        angel.setupNewDevice(root.selectedDevice)
+    }
 
     SilicaListView {
         id: listView
         anchors.fill: parent
-        model: angel.devices
+        model: angel.devices()
         header: DialogHeader { 
-            acceptText: ""
+            acceptText: "Save"
             cancelText: "Cancel"
         }
 
         ViewPlaceholder {
             enabled: listView.count == 0
             text: "No devices found"
-            hintText: "Press the button on your sensor"
-        }
+            hintText: "Press the button on your sensor" }
 
-        delegate: ListItem {
+        delegate: BackgroundItem {
             id: listItem
-            menu: connectMenu
+            property bool isSelected: index === root.selectedDevice
 
-            Label {
-                id: label
-                text: name
-                color: listItem.highlighted ? Theme.highlightColor : Theme.primaryColor
-                anchors {
-                    left: parent.left
-                    leftMargin: Theme.horizontalPageMargin
-                }
-            }
-            Label {
-                anchors.top: label.bottom
-                text: address
-                font.pixelSize: Theme.fontSizeSmall
-                color: listItem.highlighted ? Theme.highlightColor : Theme.secondaryColor
-                anchors {
-                    top: label.bottom
-                    left: parent.left
-                    leftMargin: Theme.horizontalPageMargin
-                }
+
+            Image {
+                id: deviceIcon
+                x: Theme.horizontalPageMargin
+                anchors.verticalCenter: parent.verticalCenter
+                source: "image://theme/icon-m-bluetooth" + (listItem.isSelected ? "?" + Theme.highlightColor : "")
+                opacity: listItem.matchesProfileHint || listItem.isSelected ? 1 : 0.5
             }
 
-            function connect() {
-                remorseBluez.execute(qsTr("Bluetooth Error"),
-                    function() {
-                        angel.stopSearch()
-                        progressPanel.open = false
-                    }, 5000)
+            Label {
+                anchors {
+                    left: deviceIcon.right
+                    leftMargin: Theme.paddingMedium
+                    right: parent.right
+                    rightMargin: Theme.horizontalPageMargin
+                    verticalCenter: parent.verticalCenter
+                }
+                text: model.name.length ? model.name : model.address
+                truncationMode: TruncationMode.Fade
+                color: listItem.isSelected
+                       ? Theme.highlightColor
+                       : Theme.rgba(Theme.primaryColor, listItem.matchesProfileHint ? 1.0 : 0.5)
             }
 
             onClicked: {
+                root.selectedDevice = index
+                root.deviceSelected = true
                 console.log("Clicked " + index)
             }
-
-            Component {
-                id: connectMenu
-                ContextMenu {
-                    MenuItem {
-                        text: "Connect"
-                        onClicked: connect()
-                    }
-                }
-            }
         }
-    }
-
-    RemorsePopup {
-        id: remorseBluez
     }
 
     DockedPanel {
         id: progressPanel
         open: true
-        width: page.isPortrait ? parent.width : Theme.itemSizeExtraLarge + Theme.paddingLarge
-        height: page.isPortrait ? Theme.itemSizeExtraLarge + Theme.paddingLarge : parent.height
+        width: root.isPortrait ? parent.width : Theme.itemSizeExtraLarge + Theme.paddingLarge
+        height: root.isPortrait ? Theme.itemSizeExtraLarge + Theme.paddingLarge : parent.height
 
-        dock: page.isPortrait ? Dock.Bottom : Dock.Right
+        dock: root.isPortrait ? Dock.Bottom : Dock.Right
 
-        ProgressCircle {
-            id: progressCircle
+        ProgressBar {
+            id: discoveryProgressBar
+            width: parent.width
+            opacity: 1.0
+            indeterminate: true
+            label: "Searching for devices"
 
-            anchors.centerIn: parent
+            Behavior on opacity { FadeAnimation {} }
+        }
+    }
 
-            NumberAnimation on value {
-                from: 0
-                to: 1
-                duration: 1000
-                running: progressPanel.expanded
-                loops: Animation.Infinite
-            }
+    Timer {
+        id: timer
+        interval: 10000
+        onTriggered: {
+            progressPanel.hide()
+            angel.stopSearch()
         }
     }
 }

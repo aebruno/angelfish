@@ -1,3 +1,8 @@
+debugfiles.list
+debuglinks.list
+debugsources.list
+documentation.list
+rpm/harbour-angelfish.spec.2467
 build/
 RPMS/
 rpmbuilddir/

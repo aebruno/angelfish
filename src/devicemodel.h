@@ -2,9 +2,8 @@
 #define DEVICEMODEL_H
 
 #include <QAbstractListModel>
-#include "deviceinfo.h"
+#include "libgato/gato.h"
 
-QT_USE_NAMESPACE
 class DeviceModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -18,7 +17,8 @@ public:
     explicit DeviceModel(QObject *parent = 0);
     virtual ~DeviceModel();
 
-    void addDevice(DeviceInfo *device);
+    void addDevice(GatoPeripheral *device);
+    GatoPeripheral* getDevice(int index);
     void clear();
     int count() const;
 
@@ -31,7 +31,7 @@ Q_SIGNALS:
 
 private:
     QHash<int, QByteArray> _roles;
-    QList<DeviceInfo *> m_devices;
+    QList<GatoPeripheral *> m_devices;
 
 };
 #endif // DEVICEMODEL_H

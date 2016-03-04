@@ -33,14 +33,14 @@ QVariant DeviceModel::data(const QModelIndex &index, int role) const
     if (index.row() >= m_devices.count())
         return QVariant();
 
-    DeviceInfo *d = m_devices.at(index.row());
+    GatoPeripheral *d = m_devices.at(index.row());
 
     switch (role) {
     case NameRole:
-        return QVariant::fromValue(d->getName());
+        return QVariant::fromValue(d->name());
         break;
     case AddressRole:
-        return QVariant::fromValue(d->getAddress());
+        return QVariant::fromValue(d->address().toString());
         break;
     default:
         return QVariant();
@@ -54,7 +54,12 @@ void DeviceModel::clear()
     m_devices.clear();
 }
 
-void DeviceModel::addDevice(DeviceInfo *device)
+GatoPeripheral* DeviceModel::getDevice(int index)
+{
+    return m_devices.at(index); 
+}
+
+void DeviceModel::addDevice(GatoPeripheral *device)
 {
     beginInsertRows(QModelIndex(),m_devices.count(),m_devices.count());
     m_devices.append(device);

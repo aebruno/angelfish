@@ -7,16 +7,24 @@
 #include <QGuiApplication>
 #include <QQmlContext>
 #include <QtQml>
+#include <QSettings>
+#include <QSqlDatabase>
+#include <QSqlQuery>
 #include "angel.h"
 #include "devicemodel.h"
-#include "deviceinfo.h"
 
 int main(int argc, char *argv[])
 {
+
     QGuiApplication *app = SailfishApp::application(argc, argv);
+    app->setApplicationVersion("0.0.1");
+    app->setOrganizationName("");
+    app->setApplicationName("harbour-angelfish");
 
     qmlRegisterType<DeviceModel>();
-    qmlRegisterType<DeviceInfo>();
+
+    qDebug() << "Data location path: " << QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+    qDebug() << "Config location path: " << QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
     
     Angel angel;
     QQuickView *view = SailfishApp::createView();

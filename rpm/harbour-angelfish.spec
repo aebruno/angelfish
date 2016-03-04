@@ -13,7 +13,7 @@ Version:    1.0
 Release:    1
 Group:      Qt/Qt
 License:    LICENSE
-URL:        http://example.org/
+URL:        https://github.com/aebruno/angelfish
 Source0:    %{name}-%{version}.tar.bz2
 Source100:  harbour-angelfish.yaml
 Requires:   sailfishsilica-qt5 >= 0.10.9
@@ -21,12 +21,13 @@ BuildRequires:  pkgconfig(sailfishapp) >= 1.0.2
 BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  pkgconfig(Qt5Qml)
 BuildRequires:  pkgconfig(Qt5Quick)
+BuildRequires:  pkgconfig(Qt5Sql)
 BuildRequires:  pkgconfig(bluez)
 BuildRequires:  cmake
 BuildRequires:  desktop-file-utils
 
 %description
-AngelFish is a Health Monitor application
+AngelFish Health Monitor application.
 
 
 %prep
@@ -71,3 +72,8 @@ desktop-file-install --delete-original       \
 %{_datadir}/icons/hicolor/86x86/apps/%{name}.png
 # >> files
 # << files
+
+%post
+if [ -x /usr/sbin/setcap ]; then
+    setcap 'cap_net_raw,cap_net_admin=eip' /usr/bin/harbour-angelfish
+fi
