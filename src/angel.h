@@ -2,9 +2,12 @@
 #define ANGEL_H
 
 #include "devicemodel.h"
+#include <QtCore/QObject>
 #include <QSettings>
 #include <QString>
+#include <QDateTime>
 #include <QTimer>
+#include <QByteArray>
 #include "libgato/gato.h"
 
 #define SETTING_NAME "device/name"
@@ -17,12 +20,15 @@ class Angel: public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QString error READ error NOTIFY errorChanged)
+    Q_PROPERTY(QString sensorState READ sensorState NOTIFY sensorStateChanged)
     Q_PROPERTY(QString name READ name NOTIFY nameChanged)
     Q_PROPERTY(QString address READ address NOTIFY addressChanged)
     Q_PROPERTY(QString manufacturer READ manufacturer NOTIFY manufacturerChanged)
     Q_PROPERTY(QString modelNumber READ modelNumber NOTIFY modelNumberChanged)
     Q_PROPERTY(QString serialNumber READ serialNumber NOTIFY serialNumberChanged)
     Q_PROPERTY(int battery READ battery NOTIFY batteryChanged)
+    Q_PROPERTY(int steps READ steps NOTIFY stepsChanged)
+    Q_PROPERTY(int heartRate READ heartRate NOTIFY heartRateChanged)
 
     Q_PROPERTY(bool hasSensor READ hasSensor NOTIFY sensorChanged)
     Q_PROPERTY(bool isConnected READ isConnected NOTIFY connectionChanged)
@@ -39,17 +45,29 @@ public:
     static const GatoUUID CharBatteryLevelUuid;
     static const GatoUUID ServiceHeartRateUuid;
     static const GatoUUID CharHeartRateMeasurementUuid;
+    static const GatoUUID ServiceActivityMonitoringUuid;
+    static const GatoUUID CharStepCountUuid;
+    static const GatoUUID ServiceAlarmClockUuid;
+    static const GatoUUID CharCurrentDateTimeUuid;
+    static const GatoUUID ServiceWaveformSignalUuid;
+    static const GatoUUID CharOpticalWaveformUuid;
+    static const GatoUUID ServiceHealthJournalUuid;
+    static const GatoUUID CharHealthJournalEntryUuid;
+    static const GatoUUID CharHealthJournalControlUuid;
 
     Angel();
     ~Angel();
     QString error() const;
+    QString sensorState() const;
     QString name() const;
     QString address() const;
     QString manufacturer() const;
     QString modelNumber() const;
     QString serialNumber() const;
     int battery() const;
-    bool hasSensor();
+    int steps() const;
+    int heartRate() const;
+    bool hasSensor() const;
     bool isConnected();
 
     Q_INVOKABLE void connectSensor();
@@ -76,14 +94,20 @@ Q_SIGNALS:
     void modelNumberChanged();
     void serialNumberChanged();
     void batteryChanged();
+    void stepsChanged();
+    void heartRateChanged();
     void connectionChanged();
+    void sensorStateChanged();
 
 private:
     void setError(const QString &error);
     void setSensor(QString address);
+    void updateBeats(const QByteArray &value);
 
     QSettings _settings;
     int _batteryLevel;
+    int _steps;
+    QVector<quint16> _beats;
     QString m_error;
     GatoPeripheral* _sensor;
     GatoCentralManager* m_deviceDiscoveryAgent;

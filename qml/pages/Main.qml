@@ -3,6 +3,18 @@ import Sailfish.Silica 1.0
 
 Page {
     id: root
+    property bool connection: angel.isConnected
+
+    onConnectionChanged: {
+        if(angel.sensorState == "Connecting") {
+            connectSwitch.busy = true
+            connectSwitch.description = "Connecting..press button on sensor"
+        } else {
+            connectSwitch.busy = false
+            connectSwitch.checked = angel.isConnected
+            connectSwitch.description = angel.sensorState
+        }
+    }
 
     SilicaFlickable {
         anchors.fill: parent
@@ -47,28 +59,27 @@ Page {
             }
 
             IconTextSwitch {
+                id: connectSwitch
                 text: angel.name
-                description: checked ? "Connected" : "Disconnected"
+                busy: angel.sensorState == "Connecting"
+                checked: angel.isConnected
+                description: angel.sensorState
                 icon.source: "image://theme/icon-m-bluetooth"
-                onCheckedChanged: {
-                    checked ? angel.connectSensor() : angel.disconnectSensor()
-                }
+                onCheckedChanged: checked ? angel.connectSensor() : angel.disconnectSensor()
             }
 
             DetailItem {
                 label: "Battery"
-                value: angel.battery
+                value: angel.battery + qsTr(" %")
             }
             DetailItem {
                 label: "Heart Rate"
-                value: "67"
+                value: angel.heartRate + qsTr(" bpm") 
             }
             DetailItem {
                 label: "Step Count"
-                value: "132"
+                value: angel.steps
             }
-
-
         }
     }
 }

@@ -8,12 +8,22 @@ const GatoUUID Angel::ServiceBatteryUuid(quint16(0x180F));
 const GatoUUID Angel::CharBatteryLevelUuid(quint16(0x2A19));
 const GatoUUID Angel::ServiceHeartRateUuid(quint16(0x180D));
 const GatoUUID Angel::CharHeartRateMeasurementUuid(quint16(0x2A37));
+const GatoUUID Angel::ServiceActivityMonitoringUuid(QString("68b52738-4a04-40e1-8f83-337a29c3284d"));
+const GatoUUID Angel::CharStepCountUuid(QString("7a543305-6b9e-4878-ad67-29c5a9d99736"));
+const GatoUUID Angel::ServiceAlarmClockUuid(QString("7cd50edd-8bab-44ff-a8e8-82e19393af10"));
+const GatoUUID Angel::CharCurrentDateTimeUuid(quint16(0x2A08));
+const GatoUUID Angel::ServiceWaveformSignalUuid(QString("481d178c-10dd-11e4-b514-b2227cce2b54"));
+const GatoUUID Angel::CharOpticalWaveformUuid(QString("334c0be8-76f9-458b-bb2e-7df2b486b4d7"));
+const GatoUUID Angel::ServiceHealthJournalUuid(QString("87ef07ff-4739-4527-b38f-b0e228de6ed3"));
+const GatoUUID Angel::CharHealthJournalEntryUuid(QString("8b713a94-070a-4743-a695-fc58cb3f236b"));
+const GatoUUID Angel::CharHealthJournalControlUuid(QString("5ae61782-4a65-4202-a4da-db73406e38e8"));
 
 Angel::Angel()
 {
     m_deviceDiscoveryAgent = new GatoCentralManager(this);
     _sensor = NULL;
     _batteryLevel = 0;
+    _steps = 0;
 
     connect(m_deviceDiscoveryAgent, SIGNAL(discoveredPeripheral(GatoPeripheral *, int)),
             this, SLOT(addDevice(GatoPeripheral *, int)));
@@ -28,6 +38,7 @@ Angel::Angel()
 Angel::~Angel()
 {
     d_model.clear();
+    _beats.clear();
     m_deviceDiscoveryAgent->stopScan();
     if(hasSensor()) {
         disconnectSensor();
@@ -98,6 +109,7 @@ void Angel::setupNewDevice(int index)
 
     d_model.clear();
     _batteryLevel = 0;
+    _steps = 0;
     Q_EMIT addressChanged();
     Q_EMIT nameChanged();
     Q_EMIT manufacturerChanged();
@@ -117,7 +129,7 @@ DeviceModel* Angel::devices()
     return &d_model;
 }
 
-bool Angel::hasSensor()
+bool Angel::hasSensor() const
 {
     return _sensor != NULL;
 }
@@ -129,6 +141,21 @@ bool Angel::isConnected()
     }
 
     return false;
+}
+
+QString Angel::sensorState() const
+{
+    if(hasSensor()) {
+        if(_sensor->state() == GatoPeripheral::StateConnected) {
+            return QString("Connected");
+        } else if(_sensor->state() == GatoPeripheral::StateConnecting) {
+            return QString("Connecting");
+        } else if(_sensor->state() == GatoPeripheral::StateDisconnected) {
+            return QString("Disconnected");
+        }
+    }
+
+    return QString("Disconnected");
 }
 
 void Angel::setError(const QString &error)
@@ -198,10 +225,17 @@ int Angel::battery() const
     return _batteryLevel;
 }
 
+int Angel::steps() const 
+{
+    return _steps;
+}
+
 void Angel::connectSensor()
 {
     if(hasSensor()) {
         qDebug() << "Trying to connect to sensor: " << _sensor->address();
+        Q_EMIT connectionChanged();
+        Q_EMIT sensorStateChanged();
         _sensor->connectPeripheral();
     }
 
@@ -213,7 +247,8 @@ void Angel::disconnectSensor()
         qDebug() << "Disconnecting from sensor: " << _sensor->address();
         _sensor->disconnectPeripheral();
         _batteryLevel = 0;
-        Q_EMIT batteryChanged();
+        _steps = 0;
+        _beats.clear();
     }
 }
 
@@ -222,18 +257,28 @@ void Angel::handleDeviceConnected()
 	qDebug() << "Sensor connected";
 	if (_sensor->services().isEmpty()) {
 		qDebug() << "Trying to discover services";
+        /*
+        QList<GatoUUID> interesting_services;
+        interesting_services << ServiceBatteryUuid;
+        interesting_services << ServiceDeviceInformationUuid;
+        interesting_services << ServiceHeartRateUuid;
+        interesting_services << ServiceActivityMonitoringUuid;
+		_sensor->discoverServices(interesting_services);
+        */
 		_sensor->discoverServices();
 	} else {
 		// Directly use the services in cache
 		handleDeviceServices();
 	}
     Q_EMIT connectionChanged();
+    Q_EMIT sensorStateChanged();
 }
 
 void Angel::handleDeviceDisconnected()
 {
 	qDebug() << "Sensor disconnected";
     Q_EMIT connectionChanged();
+    Q_EMIT sensorStateChanged();
 }
 
 void Angel::handleDeviceServices()
@@ -241,7 +286,9 @@ void Angel::handleDeviceServices()
 	QList<GatoService> services = _sensor->services();
 	qDebug() << "Total services found: " << services.size();
 	foreach (const GatoService &s, services) {
-        if(s.uuid() == ServiceBatteryUuid || s.uuid() == ServiceDeviceInformationUuid) {
+        if(s.uuid() == ServiceBatteryUuid || s.uuid() == ServiceDeviceInformationUuid ||
+           s.uuid() == ServiceActivityMonitoringUuid || s.uuid() == ServiceHeartRateUuid ||
+           s.uuid() == ServiceAlarmClockUuid) {
             qDebug() << "Processing service: " << s.uuid();
             _sensor->discoverCharacteristics(s);
         }
@@ -255,8 +302,18 @@ void Angel::handleDeviceCharacteristics(const GatoService &service)
         if(c.uuid() == CharBatteryLevelUuid) {
             qDebug() << "Subscribing to battery level notifications";
 			_sensor->setNotification(c, true);
+        } else if(c.uuid() == CharStepCountUuid) {
+            qDebug() << "Subscribing to step notifications";
+			_sensor->setNotification(c, true);
+			_sensor->readValue(c);
+        } else if(c.uuid() == CharHeartRateMeasurementUuid) {
+            qDebug() << "Subscribing to heart reate notifications";
+			_sensor->setNotification(c, true);
         } else if(c.uuid() == CharManufacturerNameUuid) {
             qDebug() << "Reading manufacturer name";
+			_sensor->readValue(c);
+        } else if(c.uuid() == CharCurrentDateTimeUuid) {
+            qDebug() << "Reading current datetime";
 			_sensor->readValue(c);
         } else if(c.uuid() == CharModelNumberUuid) {
             qDebug() << "Reading model number";
@@ -274,15 +331,71 @@ void Angel::handleDeviceUpdate(const GatoCharacteristic &characteristic, const Q
 {
     QSettings settings;
     if(characteristic.uuid() == CharBatteryLevelUuid) {
+        qDebug() << "Updating battery level";
         _batteryLevel = (int)value.at(0);
         Q_EMIT batteryChanged();
+    } else if(characteristic.uuid() == CharStepCountUuid) {
+        qDebug() << "Updating step count";
+        const char *data = value.constData();
+        quint32 *steps = (quint32 *) &data[0];
+        _steps = (int)*steps;
+        Q_EMIT stepsChanged();
+    } else if(characteristic.uuid() == CharCurrentDateTimeUuid) {
+        qDebug() << "Updating current datetime";
+        const char *data = value.constData();
+        int year = data[1] & 0xFF;
+        year = year << 8;
+        year = year | (data[0] & 0xFF);
+        int month = data[2];
+        int day = data[3];
+        int hour = data[4];
+        int minutes = data[5];
+        int seconds = data[6];
+        QDateTime curDate(QDate(year, month, day), QTime(hour, minutes, seconds));
+        qDebug() << "Current datetime is: " << curDate.toString();
     } else if(characteristic.uuid() == CharManufacturerNameUuid) {
         settings.setValue(SETTING_MF, QString::fromUtf8(value.data()));
     } else if(characteristic.uuid() == CharModelNumberUuid) {
         settings.setValue(SETTING_MODEL, QString::fromUtf8(value.data()));
     } else if(characteristic.uuid() == CharSerialNumberUuid) {
         settings.setValue(SETTING_SERIAL, QString::fromUtf8(value.data()));
+    } else if(characteristic.uuid() == CharHeartRateMeasurementUuid) {
+        updateBeats(value);
     } else {
         qWarning() << "Invalid characteristic " << characteristic.uuid();
     }
+}
+
+void Angel::updateBeats(const QByteArray &value) {
+    const char *data = value.constData();
+    quint8 flags = data[0];
+
+    //Heart Rate
+    if (flags & 0x1) { // HR 16 bit? otherwise 8 bit
+        quint16 *heartRate = (quint16 *) &data[1];
+        qDebug() << "16 bit HR value:" << *heartRate;
+        _beats.append(*heartRate);
+    } else {
+        quint8 *heartRate = (quint8 *) &data[1];
+        qDebug() << "8 bit HR value:" << *heartRate;
+        _beats.append(*heartRate);
+    }
+
+    /*
+    //Energy Expended
+    if (flags & 0x8) {
+        int index = (flags & 0x1) ? 3 : 2;
+        quint16 *energy = (quint16 *) &data[index];
+        qDebug() << "Used Energy:" << *energy;
+    }
+    */
+
+    Q_EMIT heartRateChanged();
+}
+
+int Angel::heartRate() const
+{
+    if (_beats.isEmpty())
+        return 0;
+    return _beats.last();
 }
