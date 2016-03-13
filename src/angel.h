@@ -27,6 +27,7 @@ class Angel: public QObject
     Q_PROPERTY(int battery READ battery NOTIFY batteryChanged)
     Q_PROPERTY(int steps READ steps NOTIFY stepsChanged)
     Q_PROPERTY(int heartRate READ heartRate NOTIFY heartRateChanged)
+    Q_PROPERTY(int acceleration READ acceleration NOTIFY accelerationChanged)
     Q_PROPERTY(bool hasSensor READ hasSensor NOTIFY sensorChanged)
     Q_PROPERTY(bool isConnected READ isConnected NOTIFY connectionChanged)
 
@@ -45,9 +46,11 @@ public:
     static const GatoUUID CharHeartRateMeasurementUuid;
     static const GatoUUID ServiceActivityMonitoringUuid;
     static const GatoUUID CharStepCountUuid;
+    static const GatoUUID CharAccelerationEnergyMagnitudeUuid;
     static const GatoUUID ServiceAlarmClockUuid;
     static const GatoUUID CharCurrentDateTimeUuid;
     static const GatoUUID ServiceWaveformSignalUuid;
+    static const GatoUUID CharAccelerationWaveformUuid;
     static const GatoUUID CharOpticalWaveformUuid;
     static const GatoUUID ServiceHealthJournalUuid;
     static const GatoUUID CharHealthJournalEntryUuid;
@@ -61,6 +64,7 @@ public:
     int battery() const;
     int steps() const;
     int heartRate() const;
+    int acceleration() const;
     bool hasSensor() const;
     bool isConnected();
 
@@ -85,6 +89,7 @@ Q_SIGNALS:
     void batteryChanged();
     void stepsChanged();
     void heartRateChanged();
+    void accelerationChanged();
     void connectionChanged();
     void sensorStateChanged();
 
@@ -92,11 +97,13 @@ private:
     void setError(const QString &error);
     void setSensor(QString address);
     void updateBeats(const QByteArray &value);
+    void updateAcceleration(const QByteArray &value);
 
     QSettings _settings;
     int _batteryLevel;
     int _steps;
     QVector<quint16> _beats;
+    QVector<quint32> _acceleration;
     QString m_error;
     GatoPeripheral* _sensor;
     GatoCentralManager* m_deviceDiscoveryAgent;

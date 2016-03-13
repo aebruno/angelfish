@@ -13,10 +13,12 @@ const GatoUUID Angel::ServiceHeartRateUuid(quint16(0x180D));
 const GatoUUID Angel::CharHeartRateMeasurementUuid(quint16(0x2A37));
 const GatoUUID Angel::ServiceActivityMonitoringUuid(QString("68b52738-4a04-40e1-8f83-337a29c3284d"));
 const GatoUUID Angel::CharStepCountUuid(QString("7a543305-6b9e-4878-ad67-29c5a9d99736"));
+const GatoUUID Angel::CharAccelerationEnergyMagnitudeUuid(QString("9e3bd0d7-bdd8-41fd-af1f-5e99679183ff"));
 const GatoUUID Angel::ServiceAlarmClockUuid(QString("7cd50edd-8bab-44ff-a8e8-82e19393af10"));
 const GatoUUID Angel::CharCurrentDateTimeUuid(quint16(0x2A08));
 const GatoUUID Angel::ServiceWaveformSignalUuid(QString("481d178c-10dd-11e4-b514-b2227cce2b54"));
 const GatoUUID Angel::CharOpticalWaveformUuid(QString("334c0be8-76f9-458b-bb2e-7df2b486b4d7"));
+const GatoUUID Angel::CharAccelerationWaveformUuid(QString("4e92f4ab-c01b-4b5a-b328-699856a7c2ee"));
 const GatoUUID Angel::ServiceHealthJournalUuid(QString("87ef07ff-4739-4527-b38f-b0e228de6ed3"));
 const GatoUUID Angel::CharHealthJournalEntryUuid(QString("8b713a94-070a-4743-a695-fc58cb3f236b"));
 const GatoUUID Angel::CharHealthJournalControlUuid(QString("5ae61782-4a65-4202-a4da-db73406e38e8"));
@@ -247,7 +249,7 @@ void Angel::handleDeviceServices()
 	foreach (const GatoService &s, services) {
         if(s.uuid() == ServiceBatteryUuid || s.uuid() == ServiceDeviceInformationUuid ||
            s.uuid() == ServiceActivityMonitoringUuid || s.uuid() == ServiceHeartRateUuid ||
-           s.uuid() == ServiceAlarmClockUuid) {
+           s.uuid() == ServiceAlarmClockUuid || s.uuid() == ServiceWaveformSignalUuid) {
             qDebug() << "Processing service: " << s.uuid();
             _sensor->discoverCharacteristics(s);
         }
@@ -265,8 +267,15 @@ void Angel::handleDeviceCharacteristics(const GatoService &service)
             qDebug() << "Subscribing to step notifications";
 			_sensor->setNotification(c, true);
 			_sensor->readValue(c);
+        } else if(c.uuid() == CharAccelerationEnergyMagnitudeUuid) {
+            qDebug() << "Subscribing to acceleration energy magnitude notifications";
+			_sensor->setNotification(c, true);
+			_sensor->readValue(c);
         } else if(c.uuid() == CharHeartRateMeasurementUuid) {
             qDebug() << "Subscribing to heart reate notifications";
+			_sensor->setNotification(c, true);
+        } else if(c.uuid() == CharAccelerationWaveformUuid) {
+            qDebug() << "Subscribing to acceleration wave form notifications";
 			_sensor->setNotification(c, true);
         } else if(c.uuid() == CharManufacturerNameUuid) {
             qDebug() << "Reading manufacturer name";
@@ -335,6 +344,10 @@ void Angel::handleDeviceUpdate(const GatoCharacteristic &characteristic, const Q
         settings.setValue(SETTING_SOFTREV, QString::fromUtf8(value.data()));
     } else if(characteristic.uuid() == CharHeartRateMeasurementUuid) {
         updateBeats(value);
+    } else if(characteristic.uuid() == CharAccelerationEnergyMagnitudeUuid) {
+        updateAcceleration(value);
+    } else if(characteristic.uuid() == CharAccelerationWaveformUuid) {
+        qDebug() << "Acceleration wave form data" << value.toHex();
     } else {
         qWarning() << "Invalid characteristic " << characteristic.uuid();
     }
@@ -367,9 +380,23 @@ void Angel::updateBeats(const QByteArray &value) {
     Q_EMIT heartRateChanged();
 }
 
+void Angel::updateAcceleration(const QByteArray &value) {
+    const char *data = value.constData();
+    quint32 *accelMag = (quint32 *) &data[0];
+    _acceleration.append(*accelMag);
+    Q_EMIT accelerationChanged();
+}
+
 int Angel::heartRate() const
 {
     if (_beats.isEmpty())
         return 0;
     return _beats.last();
+}
+
+int Angel::acceleration() const
+{
+    if (_acceleration.isEmpty())
+        return 0;
+    return _acceleration.last();
 }

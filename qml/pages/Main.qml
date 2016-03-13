@@ -80,6 +80,10 @@ Page {
                 label: "Step Count"
                 value: angel.steps
             }
+            DetailItem {
+                label: "Acceleration"
+                value: angel.acceleration + qsTr(" g") 
+            }
         }
     }
 }
