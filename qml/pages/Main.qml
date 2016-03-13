@@ -60,7 +60,7 @@ Page {
 
             IconTextSwitch {
                 id: connectSwitch
-                text: angel.name
+                text: qsTr("Angel Sensor")
                 busy: angel.sensorState == "Connecting"
                 checked: angel.isConnected
                 description: angel.sensorState

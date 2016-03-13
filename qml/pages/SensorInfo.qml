@@ -28,27 +28,27 @@ Page {
 
             DetailItem {
                 label: "Name"
-                value: angel.name
+                value: settings.setting("device/name")
             }
             DetailItem {
                 label: "Address"
-                value: angel.address
-            }
-            DetailItem {
-                label: "Battery"
-                value: angel.battery
+                value: settings.setting("device/address")
             }
             DetailItem {
                 label: "Manufacturer"
-                value: angel.manufacturer
+                value: settings.setting("device/manufacturer")
             }
             DetailItem {
                 label: "Model Number"
-                value: angel.modelNumber
+                value: settings.setting("device/model")
             }
             DetailItem {
                 label: "Serial Number"
-                value: angel.serialNumber
+                value: settings.setting("device/serial")
+            }
+            DetailItem {
+                label: "Firmware Revision"
+                value: settings.setting("device/firmrev")
             }
         }
     }

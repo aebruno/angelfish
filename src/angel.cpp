@@ -4,6 +4,9 @@ const GatoUUID Angel::ServiceDeviceInformationUuid(quint16(0x180A));
 const GatoUUID Angel::CharManufacturerNameUuid(quint16(0x2A29));
 const GatoUUID Angel::CharModelNumberUuid(quint16(0x2A24));
 const GatoUUID Angel::CharSerialNumberUuid(quint16(0x2A25));
+const GatoUUID Angel::CharHardwareRevisionUuid(quint16(0x2A27));
+const GatoUUID Angel::CharFirmwareRevisionUuid(quint16(0x2A26));
+const GatoUUID Angel::CharSoftwareRevisionUuid(quint16(0x2A28));
 const GatoUUID Angel::ServiceBatteryUuid(quint16(0x180F));
 const GatoUUID Angel::CharBatteryLevelUuid(quint16(0x2A19));
 const GatoUUID Angel::ServiceHeartRateUuid(quint16(0x180D));
@@ -67,7 +70,7 @@ void Angel::deviceSearch()
     d_model.clear();
     m_deviceDiscoveryAgent->scanForPeripherals();
 
-    // Stop searching after 10 seconds
+    // XXX should we stop searching after 10 seconds to properly stop scan?
     //QTimer::singleShot(10000, this, SLOT(stopSearch()));
 }
 
@@ -103,6 +106,9 @@ void Angel::setupNewDevice(int index)
     settings.setValue(SETTING_MF, "");
     settings.setValue(SETTING_MODEL, "");
     settings.setValue(SETTING_SERIAL, "");
+    settings.setValue(SETTING_HWREV, "");
+    settings.setValue(SETTING_FIRMREV, "");
+    settings.setValue(SETTING_SOFTREV, "");
     settings.sync();
 
     setSensor(d->address().toString());
@@ -110,11 +116,6 @@ void Angel::setupNewDevice(int index)
     d_model.clear();
     _batteryLevel = 0;
     _steps = 0;
-    Q_EMIT addressChanged();
-    Q_EMIT nameChanged();
-    Q_EMIT manufacturerChanged();
-    Q_EMIT modelNumberChanged();
-    Q_EMIT serialNumberChanged();
     Q_EMIT batteryChanged();
     Q_EMIT sensorChanged();
 }
@@ -166,18 +167,6 @@ void Angel::setError(const QString &error)
     }
 }
 
-QString Angel::name() const
-{
-    QSettings settings;
-    if(_sensor != NULL && _sensor->name().length() > 0) {
-        return _sensor->name();
-    } else if(settings.value(SETTING_NAME).toString().length() > 0) {
-        return settings.value(SETTING_NAME).toString();
-    }
-
-    return QString();
-}
-
 QString Angel::address() const
 {
     QSettings settings;
@@ -185,36 +174,6 @@ QString Angel::address() const
         return _sensor->address().toString();
     } else if(settings.value(SETTING_ADDR).toString().length() > 0) {
         return settings.value(SETTING_ADDR).toString();
-    }
-
-    return QString();
-}
-
-QString Angel::manufacturer() const
-{
-    QSettings settings;
-    if(settings.value(SETTING_MF).toString().length() > 0) {
-        return settings.value(SETTING_MF).toString();
-    }
-
-    return QString();
-}
-
-QString Angel::modelNumber() const
-{
-    QSettings settings;
-    if(settings.value(SETTING_MODEL).toString().length() > 0) {
-        return settings.value(SETTING_MODEL).toString();
-    }
-
-    return QString();
-}
-
-QString Angel::serialNumber() const
-{
-    QSettings settings;
-    if(settings.value(SETTING_SERIAL).toString().length() > 0) {
-        return settings.value(SETTING_SERIAL).toString();
     }
 
     return QString();
@@ -321,6 +280,15 @@ void Angel::handleDeviceCharacteristics(const GatoService &service)
         } else if(c.uuid() == CharSerialNumberUuid) {
             qDebug() << "Reading model serial";
 			_sensor->readValue(c);
+        } else if(c.uuid() == CharHardwareRevisionUuid) {
+            qDebug() << "Reading hardware revision number";
+			_sensor->readValue(c);
+        } else if(c.uuid() == CharFirmwareRevisionUuid) {
+            qDebug() << "Reading firmware revision number";
+			_sensor->readValue(c);
+        } else if(c.uuid() == CharSoftwareRevisionUuid) {
+            qDebug() << "Reading software revision number";
+			_sensor->readValue(c);
         } else {
             qDebug() << "Ignoring characteristic " << c.uuid() << " for service " << service.uuid();
         }
@@ -359,6 +327,12 @@ void Angel::handleDeviceUpdate(const GatoCharacteristic &characteristic, const Q
         settings.setValue(SETTING_MODEL, QString::fromUtf8(value.data()));
     } else if(characteristic.uuid() == CharSerialNumberUuid) {
         settings.setValue(SETTING_SERIAL, QString::fromUtf8(value.data()));
+    } else if(characteristic.uuid() == CharHardwareRevisionUuid) {
+        settings.setValue(SETTING_HWREV, QString::fromUtf8(value.data()));
+    } else if(characteristic.uuid() == CharFirmwareRevisionUuid) {
+        settings.setValue(SETTING_FIRMREV, QString::fromUtf8(value.data()));
+    } else if(characteristic.uuid() == CharSoftwareRevisionUuid) {
+        settings.setValue(SETTING_SOFTREV, QString::fromUtf8(value.data()));
     } else if(characteristic.uuid() == CharHeartRateMeasurementUuid) {
         updateBeats(value);
     } else {

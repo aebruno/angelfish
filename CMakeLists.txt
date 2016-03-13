@@ -15,7 +15,7 @@ include_directories(${BLUEZ_INCLUDE_DIRS})
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-add_executable(harbour-angelfish src/main.cpp src/angel.cpp src/devicemodel.cpp)
+add_executable(harbour-angelfish src/main.cpp src/angel.cpp src/devicemodel.cpp src/settings.cpp)
 
 set_property(TARGET harbour-angelfish
   PROPERTY INCLUDE_DIRECTORIES
