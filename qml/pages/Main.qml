@@ -14,6 +14,12 @@ Page {
             connectSwitch.checked = angel.isConnected
             connectSwitch.description = angel.sensorState
         }
+
+        if(angel.isConnected) {
+            activityTimer.start()
+        } else {
+            activityTimer.stop()
+        }
     }
 
     SilicaFlickable {
@@ -34,7 +40,7 @@ Page {
             }
             MenuItem {
                 enabled: angel.hasSensor
-                text: qsTr("Device Info")
+                text: qsTr("Sensor Info")
                 onClicked: {
                     pageStack.push(Qt.resolvedUrl("SensorInfo.qml"))
                 }
@@ -70,20 +76,33 @@ Page {
 
             DetailItem {
                 label: "Battery"
-                value: angel.battery + qsTr(" %")
+                value: battery.level + qsTr(" %")
             }
+
             DetailItem {
                 label: "Heart Rate"
-                value: angel.heartRate + qsTr(" bpm") 
+                value: heart.rate + qsTr(" bpm")
             }
+
             DetailItem {
-                label: "Step Count"
-                value: angel.steps
+                label: "Steps"
+                value: activity.steps
             }
+
             DetailItem {
                 label: "Acceleration"
-                value: angel.acceleration + qsTr(" g") 
+                value: activity.acceleration + qsTr(" g")
             }
+        }
+    }
+
+    Timer {
+        id: activityTimer
+        interval: 10000
+        running: false
+        repeat: true
+        onTriggered: {
+            activity.readAcceleration()
         }
     }
 }

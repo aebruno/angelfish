@@ -12,6 +12,14 @@
 #include <QtCore/QObject>
 #include <QtCore/QVariant>
 
+#define SETTING_NAME "device/name"
+#define SETTING_ADDR "device/address"
+#define SETTING_MF "device/manufacturer"
+#define SETTING_MODEL "device/model"
+#define SETTING_SERIAL "device/serial"
+#define SETTING_HWREV "device/hwrev"
+#define SETTING_FIRMREV "device/firmrev"
+#define SETTING_SOFTREV "device/softrev"
 
 class Settings : public QObject
 {
