@@ -84,14 +84,62 @@ Page {
                 value: heart.rate + qsTr(" bpm")
             }
 
-            DetailItem {
-                label: "Steps"
-                value: activity.steps
+            Repeater {
+                width: parent.width
+                model: 1
+                ListItem {
+                    menu: resetStepsMenu
+                    contentHeight: Theme.itemSizeSmall
+
+                    function resetSteps() {
+                        remorseAction("Resetting", function() { activity.resetSteps(); activity.readSteps() });
+                    }
+
+                    DetailItem {
+                        anchors.centerIn: parent
+                        label: "Steps"
+                        value: activity.steps
+                    }
+
+                    Component {
+                        id: resetStepsMenu
+                        ContextMenu {
+                            MenuItem {
+                                text: "Reset Steps"
+                                onClicked: resetSteps();
+                            }
+                        }
+                    }
+                }
             }
 
-            DetailItem {
-                label: "Acceleration"
-                value: activity.acceleration + qsTr(" g")
+            Repeater {
+                width: parent.width
+                model: 1
+                ListItem {
+                    menu: resetAccelerationMenu
+                    contentHeight: Theme.itemSizeSmall
+
+                    function resetAcceleration() {
+                        remorseAction("Resetting", function() { activity.resetAcceleration() })
+                    }
+
+                    DetailItem {
+                        anchors.centerIn: parent
+                        label: "Acceleration"
+                        value: activity.acceleration + qsTr(" g")
+                    }
+
+                    Component {
+                        id: resetAccelerationMenu
+                        ContextMenu {
+                            MenuItem {
+                                text: "Reset Acceleration"
+                                onClicked: resetAcceleration()
+                            }
+                        }
+                    }
+                }
             }
         }
     }

@@ -16,13 +16,17 @@ public:
     static const GatoUUID ServiceActivityMonitoringUuid;
     static const GatoUUID CharStepCountUuid;
     static const GatoUUID CharAccelerationEnergyMagnitudeUuid;
+    static const GatoUUID CharActivityMonitoringControlPointUuid;
 
     const GatoUUID uuid();
     int getSteps() const;
     void setSteps(int steps);
     int getAcceleration() const;
 
+    Q_INVOKABLE void readSteps();
+    Q_INVOKABLE void resetSteps();
     Q_INVOKABLE void readAcceleration();
+    Q_INVOKABLE void resetAcceleration();
 
 public slots:
     void handleCharacteristics(const GatoService &service);
@@ -34,6 +38,7 @@ Q_SIGNALS:
 
 private:
     void updateAcceleration(const QByteArray &value);
+    void writeActivityControl(const QByteArray &opcode);
 
     int _steps;
     QVector<quint32> _acceleration;
