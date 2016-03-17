@@ -1,4 +1,6 @@
 /**
+ * From: https://lists.sailfishos.org/pipermail/devel/2013-December/002321.html
+ *
  * Copyright (c) 2012 Nokia Corporation.
  * All rights reserved.
  *
