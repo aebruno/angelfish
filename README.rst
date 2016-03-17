@@ -2,17 +2,17 @@
 AngelFish - Health Monitor
 ===============================================================================
 
--------------------------------------------------------------------------------
-About
--------------------------------------------------------------------------------
-
-AngelFish is a native SailfishOS/Jolla app for the Angel Sensor.
+AngelFish is a native `Sailfish OS <https://sailfishos.org/>`_ app for the
+`Angel Sensor <http://angelsensor.com/>`_.
 
 -------------------------------------------------------------------------------
 Features
 -------------------------------------------------------------------------------
 
-TODO
+- Battery level reporting
+- Heart Rate monitoring
+- Step Count
+- Acceleration Energy Magnitude 
 
 -------------------------------------------------------------------------------
 License

@@ -10,6 +10,7 @@
 #include <QSettings>
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include "version.h"
 #include "angel.h"
 #include "devicemodel.h"
 #include "settings.h"
@@ -22,7 +23,7 @@ int main(int argc, char *argv[])
 {
 
     QGuiApplication *app = SailfishApp::application(argc, argv);
-    app->setApplicationVersion("0.0.1");
+    app->setApplicationVersion(ANGELFISH_VERSION);
     app->setOrganizationName("");
     app->setApplicationName("harbour-angelfish");
 
